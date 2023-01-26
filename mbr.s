@@ -22,6 +22,7 @@ low_start:
 .CheckPartitionsBootFlag:
 	mov ax, 4 						# They are 4 Partition tables in MBR
 	mov bx, offset flat:Partition1 	#Load Partition1 offset address
+
 .CheckPartitionsBootFlagLoop:
 	cmp byte ptr [bx], 0x80 		# Is it the active partition ?
 	je .CheckPartitionsBootFlagFound # Found it !
@@ -32,13 +33,54 @@ low_start:
 .CheckPartitionsBootFlagError:
 	mov bx, offset flat:NoBootablePartitionErrMsg
 	call print_string
-	jmp .
+	jmp CPU_HLT
 	
 .CheckPartitionsBootFlagFound:
+	mov word ptr[PartitonOffset], bx
 	mov bx, offset flat:BootablePartitionFoundMsg
 	call print_string
-	jmp .
 
+.LoadVBRPartition:
+	mov ah, 0x41
+	mov bx, 0x55AA
+	mov dl, byte ptr[bootDrive]
+	int 0x13
+
+	jc NoExtentions
+
+	push dword ptr 0x0
+	push dword ptr [PartitonOffset + 8]
+	push word ptr 0x0
+	push word ptr 0x7c00
+	push word ptr 0x0001
+	push word ptr 0x0010
+	mov ah, 0x42
+	mov dl, byte ptr[bootDrive]
+	mov si, sp
+	int 0x13
+	jc .LoadVBRPartitionFailed
+
+.CheckVBRSignature:
+	cmp word ptr[0x7dfe], 0xAA55
+	jne .VBRSignatureError
+.JmpToVBR:
+	mov si, word ptr[PartitonOffset]
+	mov dl, byte ptr[bootDrive]
+	jmp 0x7c00
+.VBRSignatureError:
+	mov bx, offset flat:VBRSignatureErrorMsg
+	call print_string
+	jmp CPU_HLT
+
+.LoadVBRPartitionFailed:
+	mov bx, offset flat:LoadVBRPartitionFailedMsg
+	call print_string
+	jmp CPU_HLT
+
+NoExtentions:
+	mov bx, offset flat:ExtentionsErrorMsg
+	call print_string
+	jmp CPU_HLT
 
 print_string:
     pusha       # store all register onto the stack
@@ -80,15 +122,26 @@ print_char:
     int 0x10
     popa
     ret
-    
+
+CPU_HLT:
+	jmp .
+
+
+PartitonOffset:
+	.word 0
 bootDrive:
 	.byte 0 
-
 NoBootablePartitionErrMsg:
-	.asciz "No partition marked as active found !\n"
+	.asciz "[FATAL] No partition marked as active found !\n"
 
 BootablePartitionFoundMsg:
 	.asciz "Partition marked as active found !\n"
+ExtentionsErrorMsg:
+	.asciz "[FATAL] Reading Extentions are not supported on this CPU!\n"
+LoadVBRPartitionFailedMsg:
+	.asciz "[FATAL] Could not load VBR partition !\n"
+VBRSignatureErrorMsg:
+	.asciz "[FATAL] VBR is not bootable !\n"
 
 . = 0x1BE + start /* Padding for till the first mbr entry */
 
