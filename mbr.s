@@ -137,11 +137,12 @@ CPU_HLT:
 
 DAP:
 	.byte 0x10
-	.byte 0
-	.word 1
+	.byte 0x0
+	.word 0x1
 	.word 0x7c00
-	.long 0
-	.long 0
+	.word 0x0
+	.long 0x0
+	.long 0x0
 
 PartitonOffset:
 	.word 0
