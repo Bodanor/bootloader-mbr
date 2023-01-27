@@ -128,11 +128,7 @@ LoadVBRPartitionFailedMsg:
 VBRSignatureErrorMsg:
 	.asciz "[FATAL] VBR is not bootable !\n"
 
-.section .common_rountines, "ax"
-.section .mbr
-. = 0x1BE + start /* Padding for till the first mbr entry */
-
-
+.section .mbr.tail, "ax"
 Partition1:
 	.fill 16
 Partition2:

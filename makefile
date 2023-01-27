@@ -7,6 +7,7 @@ $(DEST_FOLDER)/hdd.img: $(DEST_FOLDER)/vbr-bootloader $(DEST_FOLDER)/mbr
 	dd if=/dev/zero of=$(DEST_FOLDER)/hdd.img bs=516096c count=100
 
 $(DEST_FOLDER)/vbr-bootloader:
+	mkdir -p $(DEST_FOLDER)
 	make -C bootloader
 
 debug: $(DEST_FOLDER)/hdd.img $(DEST_FOLDER)/vbr-bootloader $(DEST_FOLDER)/mbr
@@ -20,6 +21,7 @@ debug: $(DEST_FOLDER)/hdd.img $(DEST_FOLDER)/vbr-bootloader $(DEST_FOLDER)/mbr
 
 
 $(DEST_FOLDER)/mbr:
+	mkdir -p $(DEST_FOLDER)
 	make -C bootloader
 
 clean:

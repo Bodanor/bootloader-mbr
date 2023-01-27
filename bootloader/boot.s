@@ -50,6 +50,7 @@ _init:
 
 	mov bp, 0x7c00
 	mov sp, bp
+	DEBUG
 	jmp .
 
 bootDrive:

@@ -7,10 +7,10 @@ DEST_FOLDER = ../build
 all: $(DEST_FOLDER)/mbr $(DEST_FOLDER)/vbr-bootloader
 
 $(DEST_FOLDER)/mbr: mbr.o print_16.o
-	$(I386-LD) $(I386-LDFLAGS) -T linker.ld -o $@ $^
+	$(I386-LD) $(I386-LDFLAGS) -T mbr.ld -o $@ $^
 
 $(DEST_FOLDER)/vbr-bootloader: boot.o print_16.o
-	$(I386-LD) $(I386-LDFLAGS) -T linker.ld -o $@ $^
+	$(I386-LD) $(I386-LDFLAGS) -T vbr.ld -o $@ $^
 
 %.o:%.s
 	$(I386-AS) $< -o $@

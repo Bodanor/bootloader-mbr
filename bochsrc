@@ -1,5 +1,5 @@
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
-ata0-master: type=disk, mode=flat, biosdetect=auto, path=hdd.img
+ata0-master: type=disk, mode=flat, biosdetect=auto, path=build/hdd.img
 boot: disk
 log:         zygomatic.log
 error:       action=report
