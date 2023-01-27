@@ -1,6 +1,11 @@
 	.intel_syntax noprefix
 	.code16
 
+/* This is a macro to place a breakpoint with bochs */
+.macro DEBUG
+xchg bx, bx
+.endm
+
 start:
 	cli
 	xor ax, ax
@@ -50,15 +55,33 @@ low_start:
 	jc NoExtentions 					# If no Carry flag and BX contains 0xAA55 then int 13h extentions are supported
 	cmp  bx, 0xAA55
 	jne NoExtentions
+	
+	/* I decided to push directly a DAP struct into the stack instead of creating one in the MBR
+	 * Here, we word on 16 bits code so a single push is 16 bits (OR 2 bytes), if we wanted 32 bits then we have to use the DWORD size.
+	 * DAP STRUCT Typical Form :
+	 *
+	 *	Offset	Size	Description
+ 	 *	0		1		size of packet (16 bytes)
+ 	 *	1		1		always 0
+ 	 *	2		2		number of sectors to transfer (max 127 on some BIOSes)
+ 	 *	4		4		transfer buffer (16 bit segment:16 bit offset) (see note #1)
+ 	 *	8		4		lower 32-bits of 48-bit starting LBA
+	 *	12		4		upper 16-bits of 48-bit starting LBA
+	 *
+	*/ 
 
+	push dword ptr 0
 	mov bx, word ptr[PartitonOffset]
-	add bx, 8 							# Add 8 to BX to from the base active partition as it contains the LBA address
-	mov ebx, dword ptr[bx] 				# EBX contains the LBA address
-	mov dword ptr[DAP + 8], ebx 
-
+	add bx, 8
+	push dword ptr[bx]
+	push 0x0
+	push 0x7c00
+	push 0x1
+	push 0x10
+	
 	mov ah, 0x42
 	mov dl, byte ptr[bootDrive]
-	mov si, offset flat:DAP
+	mov si, sp
 	int 0x13
 	jc .LoadVBRPartitionFailed
 
@@ -128,15 +151,6 @@ print_char:
 
 CPU_HLT:
 	jmp .
-
-DAP:
-	.byte 0x10
-	.byte 0x0
-	.word 0x1
-	.word 0x7c00
-	.word 0x0
-	.long 0x0
-	.long 0x0
 
 PartitonOffset:
 	.word 0
