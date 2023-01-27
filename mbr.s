@@ -1,6 +1,13 @@
 	.intel_syntax noprefix
 	.code16
+
+/* This is a macro to place a breakpoint with bochs */
+.macro DEBUG
+xchg bx, bx
+.endm
+
 start:
+	DEBUG
 	cli
 	xor ax, ax
 	mov ds, ax
@@ -21,6 +28,7 @@ low_start:
 	
 .CheckPartitionsBootFlag:
 	mov ax, 4 						# They are 4 Partition tables in MBR
+	DEBUG
 	mov bx, offset flat:Partition1 	#Load Partition1 offset address
 
 .CheckPartitionsBootFlagLoop:
@@ -45,18 +53,19 @@ low_start:
 	mov bx, 0x55AA
 	mov dl, byte ptr[bootDrive]
 	int 0x13
-
+	
 	jc NoExtentions
+	cmp  bx, 0xAA55
+	jne NoExtentions
+	mov bx, word ptr[PartitonOffset]
+	
+	add bx, 8
+	mov ebx, dword ptr[bx]
+	mov dword ptr[DAP + 8], ebx
 
-	push dword ptr 0x0
-	push dword ptr [PartitonOffset + 8]
-	push word ptr 0x0
-	push word ptr 0x7c00
-	push word ptr 0x0001
-	push word ptr 0x0010
 	mov ah, 0x42
 	mov dl, byte ptr[bootDrive]
-	mov si, sp
+	mov si, offset flat:DAP
 	int 0x13
 	jc .LoadVBRPartitionFailed
 
@@ -126,6 +135,13 @@ print_char:
 CPU_HLT:
 	jmp .
 
+DAP:
+	.byte 0x10
+	.byte 0
+	.word 1
+	.word 0x7c00
+	.long 0
+	.long 0
 
 PartitonOffset:
 	.word 0
