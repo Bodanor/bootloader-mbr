@@ -1,13 +1,7 @@
 	.intel_syntax noprefix
 	.code16
 
-/* This is a macro to place a breakpoint with bochs */
-.macro DEBUG
-xchg bx, bx
-.endm
-
 start:
-	DEBUG
 	cli
 	xor ax, ax
 	mov ds, ax
@@ -28,7 +22,6 @@ low_start:
 	
 .CheckPartitionsBootFlag:
 	mov ax, 4 						# They are 4 Partition tables in MBR
-	DEBUG
 	mov bx, offset flat:Partition1 	#Load Partition1 offset address
 
 .CheckPartitionsBootFlagLoop:
@@ -43,25 +36,25 @@ low_start:
 	call print_string
 	jmp CPU_HLT
 	
-.CheckPartitionsBootFlagFound:
+.CheckPartitionsBootFlagFound: 			#We at least found an active partition
 	mov word ptr[PartitonOffset], bx
 	mov bx, offset flat:BootablePartitionFoundMsg
 	call print_string
 
-.LoadVBRPartition:
+.LoadVBRPartition: 						# This a test to see if the BIOS supports the Extendended int h13 reads. If not, we can't boot !
 	mov ah, 0x41
 	mov bx, 0x55AA
 	mov dl, byte ptr[bootDrive]
 	int 0x13
 	
-	jc NoExtentions
+	jc NoExtentions 					# If no Carry flag and BX contains 0xAA55 then int 13h extentions are supported
 	cmp  bx, 0xAA55
 	jne NoExtentions
+
 	mov bx, word ptr[PartitonOffset]
-	
-	add bx, 8
-	mov ebx, dword ptr[bx]
-	mov dword ptr[DAP + 8], ebx
+	add bx, 8 							# Add 8 to BX to from the base active partition as it contains the LBA address
+	mov ebx, dword ptr[bx] 				# EBX contains the LBA address
+	mov dword ptr[DAP + 8], ebx 
 
 	mov ah, 0x42
 	mov dl, byte ptr[bootDrive]
@@ -70,12 +63,13 @@ low_start:
 	jc .LoadVBRPartitionFailed
 
 .CheckVBRSignature:
-	cmp word ptr[0x7dfe], 0xAA55
+	cmp word ptr[0x7dfe], 0xAA55 		# Check if the active partiton is bootable
 	jne .VBRSignatureError
 .JmpToVBR:
-	mov si, word ptr[PartitonOffset]
+	mov si, word ptr[PartitonOffset] 	# Finally jump to the load VBR and give control
 	mov dl, byte ptr[bootDrive]
-	jmp 0x7c00
+	jmp 0x7c00 							# We'll never return from this jump !
+
 .VBRSignatureError:
 	mov bx, offset flat:VBRSignatureErrorMsg
 	call print_string
