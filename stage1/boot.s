@@ -51,11 +51,22 @@ _init:
 	mov bp, 0x7c00
 	mov sp, bp
 	
+
+.SetVideoMode:
+	mov ah, 0x0
+	mov al, 0x2
+	int 0x10
+	
+	mov bx, offset flat:VideoModeMsg
+	call print_string
+	
 	mov bx, offset flat:FirstStageMsg
 	call print_string
-	jmp .	
+	jmp .
 FirstStageMsg:
 	.asciz "First Stage loaded !\n"
+VideoModeMsg:
+	.asciz "Setted Video mode to 80x25 16bit color\n"
 bootDrive:
 	.byte 0
 
