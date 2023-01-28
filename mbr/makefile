@@ -6,7 +6,7 @@ all: mbr
 
 
 mbr: $(AS_OBJ) ../16-routines/print_16.o
-	$(I386-LD) -T mbr.ld -o $@ $^
+	$(I386-LD) $(I386-LDFLAGS) -T mbr.ld -o $@ $^
 
 .PHONY: all clean
 

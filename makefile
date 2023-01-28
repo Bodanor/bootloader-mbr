@@ -1,6 +1,6 @@
 I386-AS=i386-elf-as
 I386-LD=i386-elf-ld
-i386-LDFLAGS=--oformat binary
+I386-LDFLAGS=--oformat binary
 
 SUBDIRS := mbr stage1
 
