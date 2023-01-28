@@ -50,9 +50,12 @@ _init:
 
 	mov bp, 0x7c00
 	mov sp, bp
-	DEBUG
-	jmp .
-
+	
+	mov bx, offset flat:FirstStageMsg
+	call print_string
+	jmp .	
+FirstStageMsg:
+	.asciz "First Stage loaded !\n"
 bootDrive:
 	.byte 0
 
