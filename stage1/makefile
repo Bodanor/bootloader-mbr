@@ -1,12 +1,13 @@
 AS_SRC := $(wildcard *.s)
 AS_OBJ := $(AS_SRC:.s=.o)
 
-all: mbr
+
+all: vbr-bootloader
 	make -C ../16-routines
 
 
-mbr: $(AS_OBJ) ../16-routines/print_16.o
-	$(I386-LD) -T mbr.ld -o $@ $^
+vbr-bootloader: $(AS_OBJ) ../16-routines/print_16.o
+	$(I386-LD) -T vbr.ld -o $@ $^
 
 .PHONY: all clean
 
@@ -16,6 +17,6 @@ mbr: $(AS_OBJ) ../16-routines/print_16.o
 clean:
 	make -C ../16-routines clean
 	rm -rf *.o
-	rm -rf mbr
+	rm -rf vbr-bootloader
 
 

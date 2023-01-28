@@ -7,15 +7,16 @@ MAKE_DIR := $(pwd)
 
 MBR_DIR := $(MAKE_DIR)/mbr
 
-
-export I386-AS I386-LD I386-LDFLAGS build MAKE_DIR
+export I386-AS I386-LD I386-LDFLAGS BUILD_DIR
 
 all:
 	mkdir -p $(BUILD_DIR)
 	@$(MAKE) -C mbr
+	@$(MAKE) -C stage1
 
 .PHONY: clean
 
 clean:
 	@$(MAKE) -C mbr clean
+	@$(MAKE) -C stage1 clean
 
