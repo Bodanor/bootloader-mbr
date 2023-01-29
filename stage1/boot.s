@@ -54,7 +54,7 @@ _init:
 
 .SetVideoMode:
 	mov ah, 0x0
-	mov al, 0x2
+	mov al, 0x3
 	int 0x10
 	
 	mov bx, offset flat:VideoModeMsg
@@ -62,11 +62,43 @@ _init:
 	
 	mov bx, offset flat:FirstStageMsg
 	call print_string
+
+.checkA20_Line:
+	DEBUG
+	xor ax, ax # AX == 0x0
+	mov ds, ax
+	not ax 	   # AX == 0xffff
+	mov es, ax
+
+	mov di, 0x7dfe
+	mov al, byte ptr ds:[di]
+	add di, 0x10
+	cmp al, byte ptr es:[di] # Did memory wrapped around ? If so, A20line is not enabled, we should do so !!!
+
+	jne .skip_a20
+	mov bx, offset flat:A20DisabledMsg
+	call print_string
+	
+	call .enableA20Gate
 	jmp .
+
+.skip_a20:
+	mov bx, offset flat:A20EnabledMsg
+	call print_string
+	jmp .
+
+
+.enableA20Gate:
+	ret
+
 FirstStageMsg:
 	.asciz "First Stage loaded !\n"
 VideoModeMsg:
-	.asciz "Setted Video mode to 80x25 16bit color\n"
+	.asciz "Changing Video mode to 80x25 16bit color\n"
+A20EnabledMsg:
+	.asciz "A20 Gate enabled !\n"
+A20DisabledMsg:
+	.asciz "A20 Gate disabled, trying to enable it\n"
 bootDrive:
 	.byte 0
 
