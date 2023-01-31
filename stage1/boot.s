@@ -63,33 +63,49 @@ _init:
 	mov bx, offset flat:FirstStageMsg
 	call print_string
 
+
+
+/* 	This routines check wether the A20 line is enabled or not
+ *  On return :
+ *				AX == 0 : A20 line disabled  
+ *				AX == 0 : A20 line enabled, nothing to be done
+ */
+
 .checkA20_Line:
-	DEBUG
 	xor ax, ax # AX == 0x0
 	mov ds, ax
 	not ax 	   # AX == 0xffff
 	mov es, ax
 
-	mov di, 0x7dfe
+	mov di, 0x7dfe 
+	mov si, 0x7e0e
+
+	mov al, byte ptr ds:[di] # When get the 510 byte of the first sector which sould be the beginning of the magick number : 0x55
+	push ax # We will need this ax value later when we check the value again
+	cmp al, byte ptr es:[si] # Did memory wrapped around ? If so, A20line is not enabled, we should do so !!!
+	
+	mov bx, 1
+	jne .skip_a20
+	
+	/* Here we check if we didn't compare with the same value by mere chance. So we actually change the value and cmp again */
+	mov byte ptr ds:[di], 0xff
 	mov al, byte ptr ds:[di]
-	add di, 0x10
-	cmp al, byte ptr es:[di] # Did memory wrapped around ? If so, A20line is not enabled, we should do so !!!
+	cmp al, byte ptr es:[si]
+	
+	pop ax
+	mov byte ptr ds:[di], al
 
 	jne .skip_a20
-	mov bx, offset flat:A20DisabledMsg
-	call print_string
-	
-	call .enableA20Gate
-	jmp .
+	mov bx, 0
 
 .skip_a20:
-	mov bx, offset flat:A20EnabledMsg
-	call print_string
-	jmp .
 
+		ret
+
+/* This is a routine to enable the a20 line if not already enabled ! */
 
 .enableA20Gate:
-	ret
+	
 
 FirstStageMsg:
 	.asciz "First Stage loaded !\n"
