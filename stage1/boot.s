@@ -1,4 +1,4 @@
-	.intel_syntax noprefix
+.intel_syntax noprefix
 	.code16
 	.section .stage1, "ax"
 	.global _start
@@ -76,36 +76,36 @@ _init:
 	cmp al, 0
 	jne .AfterA20Enabled
 	
-	mov bx, offset flat:A20FatalErrorMsg
-	call print_string
 
 BootError:
+	mov bx, offset flat:A20FatalErrorMsg
+	call print_string
 	hlt
 	jmp .
 
 .AfterA20Enabled: /* One of the above function to enable A20 worked */
 	mov bx, offset flat:A20EnabledMsg
 	call print_string
-	jmp .
 
 .LoadNextSector:
-	xor ax, ax
-	mov es, ax
-	mov bx, 0x7e00
-	mov dl, 1
-	push dx
-	mov ah, 0x2
-	mov al, dl
-	mov cl, 0x2
-	mov ch, 0x00
-	mov dh, 0x00
+	DEBUG	
+	push dword ptr 0
+	mov bx, word ptr ds:[0x600 + 0xA6]
+	add bx, 8
+	mov ebx, dword ptr[bx]
+	inc ebx
+	push ebx
+	push 0x0
+	push 0x7e00
+	push 0x1
+	push 0x10
 
+	mov ah, 0x42
+	mov dl, byte ptr[bootDrive]
+	mov si, sp
 	int 0x13
 	jc BootError
-	pop dx
-	cmp al, dh
-	jne BootError
-
+	DEBUG
 	jmp 0x7e00
 
 

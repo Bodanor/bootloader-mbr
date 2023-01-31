@@ -7,5 +7,6 @@ SECTIONS
 		FILL(0x0)
 		. = 0x1FE;
 		SHORT(0xaa55)
+		*(.stage1_nxt)
 	}
 }

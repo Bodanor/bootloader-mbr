@@ -70,7 +70,6 @@ low_start:
 	 *	12		4		upper 16-bits of 48-bit starting LBA
 	 *
 	*/ 
-
 	push dword ptr 0
 	mov bx, word ptr[PartitonOffset]
 	add bx, 8
