@@ -25,6 +25,9 @@ image: $(SUBDIRS)
 	sudo mkfs.fat -F16 /dev/loop0 -h 0x800
 	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 count=3 conv=notrunc
 	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 skip=62 seek=62 conv=notrunc
+	sudo mount /dev/loop0 /mnt
+	sudo touch /mnt/file.txt
+	sudo umount /mnt
 	sudo losetup -d /dev/loop0	
 
 .PHONY: all $(SUBDIRS) clean
