@@ -13,7 +13,7 @@ _start:
 	nop
 	/* Start of the BPB, I'll be using a fake one as when copied to a USB drive, the correct ones will replace the fakes one */
 BPB:
-	iOEM:          .ascii "NO NAME   "  	# OEM String
+	iOEM:          .ascii "NO NAME "  	# OEM String
   	iSectSize:     .word  0x0         		# bytes per sector
   	iClustSize:    .byte  0x0 				# sectors per cluster
   	iResSect:      .word  0x0 				# #of reserved sectors
@@ -90,9 +90,7 @@ BootError:
 .LoadNextSector:
 	DEBUG	
 	push dword ptr 0
-	mov bx, word ptr ds:[0x600 + 0xA6]
-	add bx, 8
-	mov ebx, dword ptr[bx]
+	mov ebx, iHiddenSect
 	inc ebx
 	push ebx
 	push 0x0
@@ -105,6 +103,7 @@ BootError:
 	mov si, sp
 	int 0x13
 	jc BootError
+
 	DEBUG
 	jmp 0x7e00
 
