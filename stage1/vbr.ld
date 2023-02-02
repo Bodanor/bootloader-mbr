@@ -1,6 +1,6 @@
 SECTIONS
 {
-    .stage1 0x7c00 : AT(0) 
+    .stage1 0x7c00 :
     {
 		*(.stage1)
 		*(.common_rountines)
