@@ -19,10 +19,10 @@ $(SUBDIRS):
 
 image: $(SUBDIRS)
 	dd if=/dev/zero of=$(BUILD_DIR)/hdd.img bs=516096c count=20
-	(echo o;echo n; echo p; echo 1; echo; echo; echo t; echo 0c; echo a; echo p; echo w) | fdisk -u -C1000 -S63 -H16 $(BUILD_DIR)/hdd.img
+	(echo o;echo n; echo p; echo 1; echo; echo; echo t; echo 0e; echo a; echo p; echo w) | fdisk -u -C1000 -S63 -H16 $(BUILD_DIR)/hdd.img
 	dd if=mbr/mbr of=$(BUILD_DIR)/hdd.img bs=446 count=1 conv=notrunc
 	sudo losetup -o 1048576 /dev/loop0 $(BUILD_DIR)/hdd.img
-	sudo mkfs.vfat -F16 /dev/loop0
+	sudo mkfs.fat -F16 /dev/loop0 -h 0x800
 	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 count=3 conv=notrunc
 	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 skip=62 seek=62 conv=notrunc
 	sudo losetup -d /dev/loop0	
