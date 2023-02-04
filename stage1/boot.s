@@ -11,8 +11,9 @@
 _start:
 	jmp _start_16
 	nop
-	/* Start of the BPB, I'll be using a fake one as when copied to a USB drive, the correct ones will replace the fakes one */
+
 BPB:
+	/* Start of the BPB, I'll be using a fake one as when copied to a USB drive, the correct ones will replace the fakes one */
 	iOEM:          .ascii "NO NAME "  	# OEM String
   	iSectSize:     .word  0x0         		# bytes per sector
   	iClustSize:    .byte  0x0 				# sectors per cluster
@@ -32,9 +33,8 @@ BPB:
 	iVolID:        .ascii "seri"        	# disk serial
 	acVolumeLabel: .ascii "MYVOLUME   " 	# volume label
 	acFSType:      .ascii "FAT16   "    	# file system type
-	
+
 _start_16:
-	DEBUG
 	ljmp 0x0000:_init
 
 _init:
@@ -88,7 +88,6 @@ BootError:
 	call print_string
 
 .LoadNextSector:
-	DEBUG	
 	push dword ptr 0
 	mov ebx, iHiddenSect
 	inc ebx
@@ -104,7 +103,6 @@ BootError:
 	int 0x13
 	jc BootError
 
-	DEBUG
 	jmp 0x7e00
 
 
@@ -230,3 +228,41 @@ A20FatalErrorMsg:
 bootDrive:
 	.byte 0
 
+/* From here, we have successfully enabled the A20gate and now we read the FAT filesystem to load the kernel
+ * Then, we can load the GDT, switch to protected mode and finally jump to the kernel
+ */
+
+.section .stage1_nxt, "ax"
+
+.stage1_next:
+	mov bx, offset flat:NextSectorMsg
+	call print_string
+	call .compute_root_sectors
+	call computer_root_location
+	jmp .
+.compute_root_sectors:
+	mov ax, 32
+	xor dx, dx
+	mul word ptr iRootSize
+	div word ptr iSectSize
+	mov cx, ax
+	mov word ptr root_sectors, cx
+	ret
+
+computer_root_location:
+	xor ax, ax
+	mov al, byte ptr iFatCnt
+	mov bx, word ptr iFatSize
+	mul bx
+	add ax, word ptr iHiddenSect
+	adc ax, word ptr iHiddenSect+2
+	add ax, word ptr iResSect
+	mov word ptr root_start_pos, ax
+	ret
+NextSectorMsg:
+	.asciz "Next sector !\n"
+
+root_sectors:
+	.word 0
+root_start_pos:
+	.word 0

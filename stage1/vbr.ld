@@ -10,3 +10,4 @@ SECTIONS
 		*(.stage1_nxt)
 	}
 }
+
