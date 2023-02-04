@@ -9,6 +9,7 @@
 .endm
 
 _start:
+	
 	jmp _start_16
 	nop
 
@@ -237,10 +238,21 @@ bootDrive:
 .stage1_next:
 	mov bx, offset flat:NextSectorMsg
 	call print_string
-	call .compute_root_sectors
-	call computer_root_location
-	jmp .
-.compute_root_sectors:
+	call compute_root_sectors
+	call compute_root_location
+#	call loadRootDir
+	xor ax, ax
+	xor bx, bx
+	xor cx, cx
+	xor dx, dx
+	mov al, byte ptr iFatCnt
+	mov bx, word ptr iFatSize
+	mov cx, word ptr iHiddenSect
+	mov dx, word ptr iResSect
+	DEBUG
+	jmp .	
+
+compute_root_sectors:
 	mov ax, 32
 	xor dx, dx
 	mul word ptr iRootSize
@@ -249,7 +261,7 @@ bootDrive:
 	mov word ptr root_sectors, cx
 	ret
 
-computer_root_location:
+compute_root_location:
 	xor ax, ax
 	mov al, byte ptr iFatCnt
 	mov bx, word ptr iFatSize
@@ -259,6 +271,24 @@ computer_root_location:
 	add ax, word ptr iResSect
 	mov word ptr root_start_pos, ax
 	ret
+
+loadRootDir:
+	mov cx, 1
+read_next_sector:
+	push dword ptr 0
+	mov ebx, root_start_pos
+	push ebx
+	push 0x0
+	push 0x7f00 # Memory loc at 0
+	push cx
+	push 0x10
+
+	mov ah, 0x42
+	mov dl, byte ptr[bootDrive]
+	mov si, sp
+	int 0x13
+	jc BootError
+	
 NextSectorMsg:
 	.asciz "Next sector !\n"
 

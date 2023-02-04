@@ -2,7 +2,7 @@
 	.code16
 	.section .common_rountines, "ax"
 	.global print_string
-
+	.global print_char
 print_string:
     pusha       # store all register onto the stack
 
