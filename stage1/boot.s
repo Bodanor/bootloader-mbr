@@ -240,7 +240,8 @@ bootDrive:
 	call print_string
 	call compute_root_sectors
 	call compute_root_location
-#	call loadRootDir
+	DEBUG
+# 	call loadRootDir
 	xor ax, ax
 	xor bx, bx
 	xor cx, cx
@@ -256,6 +257,8 @@ compute_root_sectors:
 	mov ax, 32
 	xor dx, dx
 	mul word ptr iRootSize
+	add ax, word ptr iSectSize 		# formula is (32*root_size + bytes_per_sector -1)/ bytes_per_sector. So we add this value
+	dec ax 							# Then we dec by one to get bytes_per_sector -1 before dividing
 	div word ptr iSectSize
 	mov cx, ax
 	mov word ptr root_sectors, cx
@@ -270,6 +273,7 @@ compute_root_location:
 	adc ax, word ptr iHiddenSect+2
 	add ax, word ptr iResSect
 	mov word ptr root_start_pos, ax
+	DEBUG
 	ret
 
 loadRootDir:
