@@ -89,21 +89,18 @@ BootError:
 	call print_string
 
 .LoadNextSector:
-	push dword ptr 0
-	mov ebx, iHiddenSect
-	inc ebx
-	push ebx
-	push 0x0
-	push 0x7e00
-	push 0x1
-	push 0x10
+
+	mov ebx, dword ptr iHiddenSect
+	mov dword ptr[DAP_lower_32], ebx
+	inc word ptr[DAP_lower_32]
+	mov word ptr[DAP_dest_buffer], 0x7e00
+	mov word ptr[DAP_nb_sectors], 0x1
 
 	mov ah, 0x42
 	mov dl, byte ptr[bootDrive]
-	mov si, sp
+	mov si, offset flat:DAP
 	int 0x13
 	jc BootError
-
 	jmp 0x7e00
 
 
@@ -229,6 +226,23 @@ A20FatalErrorMsg:
 bootDrive:
 	.byte 0
 
+DAP:
+
+DAP_packet_size:
+	.byte 0x10
+DAP_reserved:
+	.byte 0x0
+DAP_nb_sectors:
+	.word 0x0
+DAP_dest_buffer:
+	.int 0x0
+DAP_lower_32:
+	.int 0x0
+DAP_upper_16:
+	.int 0x0
+
+
+
 /* From here, we have successfully enabled the A20gate and now we read the FAT filesystem to load the kernel
  * Then, we can load the GDT, switch to protected mode and finally jump to the kernel
  */
@@ -240,19 +254,8 @@ bootDrive:
 	call print_string
 	call compute_root_sectors
 	call compute_root_location
-	DEBUG
-# 	call loadRootDir
-	xor ax, ax
-	xor bx, bx
-	xor cx, cx
-	xor dx, dx
-	mov al, byte ptr iFatCnt
-	mov bx, word ptr iFatSize
-	mov cx, word ptr iHiddenSect
-	mov dx, word ptr iResSect
-	DEBUG
+	call showFilesRoot
 	jmp .	
-
 compute_root_sectors:
 	mov ax, 32
 	xor dx, dx
@@ -273,26 +276,68 @@ compute_root_location:
 	adc ax, word ptr iHiddenSect+2
 	add ax, word ptr iResSect
 	mov word ptr root_start_pos, ax
-	DEBUG
 	ret
 
-loadRootDir:
+showFilesRoot:
+.init:
+	mov si, word ptr root_start_pos
+
+.loadSector:
+
+	mov word ptr [DAP_lower_32], si
+	mov word ptr[DAP_dest_buffer], 0x7f00
 	mov cx, 1
-read_next_sector:
-	push dword ptr 0
-	mov ebx, root_start_pos
-	push ebx
-	push 0x0
-	push 0x7f00 # Memory loc at 0
-	push cx
-	push 0x10
+	mov word ptr[DAP_nb_sectors], cx
 
 	mov ah, 0x42
 	mov dl, byte ptr[bootDrive]
-	mov si, sp
+	mov si, offset flat:DAP
 	int 0x13
 	jc BootError
 	
+	push si
+	xor cx, cx
+	xor dx, dx
+	mov si, 0x7f00
+
+.print_file:
+	cmp cx, 12
+	je nxt_file_entry
+	cmp cx, 8
+	je .printDot
+	mov bl, byte ptr [si]
+	cmp bl, 0x00
+	je NoMoreFiles
+	cmp bl, 0x20
+	je .inc_loop
+	call print_char
+	jmp .inc_loop
+
+.printDot:
+	mov bl, 0x2e
+	call print_char
+	dec si
+.inc_loop:
+	inc si
+	inc cx
+	inc dx
+	jmp .print_file
+
+nxt_file_entry:
+	cmp dx, 512
+	je incRootEntry
+	xor cx, cx
+	call print_newline
+	jmp .print_file
+
+incRootEntry:
+	pop si
+	add si, 512
+	jmp .print_file
+
+NoMoreFiles:
+	pop si
+	ret
 NextSectorMsg:
 	.asciz "Next sector !\n"
 
