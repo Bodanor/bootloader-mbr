@@ -26,6 +26,7 @@ image: $(SUBDIRS)
 	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 count=3 conv=notrunc
 	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 skip=62 seek=62 conv=notrunc
 	sudo mount /dev/loop0 /mnt
+	sudo touch /mnt/KERNEL.BIN
 	sudo touch /mnt/FILE.BIN
 	echo "123"  >> /mnt/FILE.BIN
 	sudo umount /mnt

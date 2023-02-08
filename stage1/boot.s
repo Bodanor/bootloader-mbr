@@ -281,7 +281,7 @@ compute_root_location:
 showFilesRoot:
 .init:
 	mov si, word ptr root_start_pos
-
+	xor ax, ax
 .loadSector:
 
 	mov word ptr [DAP_lower_32], si
@@ -296,44 +296,29 @@ showFilesRoot:
 	jc BootError
 	
 	push si
-	xor cx, cx
+	xor di, di
 	xor dx, dx
 	mov si, 0x7f00
 
-.print_file:
-	cmp cx, 12
-	je nxt_file_entry
-	cmp cx, 8
-	je .printDot
-	mov bl, byte ptr [si]
-	cmp bl, 0x00
-	je NoMoreFiles
-	cmp bl, 0x20
-	je .inc_loop
-	call print_char
-	jmp .inc_loop
-
-.printDot:
-	mov bl, 0x2e
-	call print_char
-	dec si
-.inc_loop:
-	inc si
-	inc cx
-	inc dx
-	jmp .print_file
-
+.findKernel:
+	/* Here I should probably load the current file by deleting any blanks
+	 * and add a dot, so that comparing becomes more easier
+	*/
 nxt_file_entry:
 	cmp dx, 512
 	je incRootEntry
-	xor cx, cx
+	xor di, di
 	call print_newline
-	jmp .print_file
+	add si, 0x15
+	jmp .findKernel
 
 incRootEntry:
+	inc ax
 	pop si
+	cmp ax, word ptr root_sectors
+	je NoMoreFiles
 	add si, 512
-	jmp .print_file
+	jmp .loadSector
 
 NoMoreFiles:
 	pop si
@@ -341,6 +326,10 @@ NoMoreFiles:
 NextSectorMsg:
 	.asciz "Next sector !\n"
 
+TargetKernelFileName:
+	.ascii "KERNEL.BIN"
+CurrentTargetFileName:
+	.ascii "           "
 root_sectors:
 	.word 0
 root_start_pos:
