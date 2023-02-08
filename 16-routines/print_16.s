@@ -3,8 +3,10 @@
 	.section .common_rountines, "ax"
 	.global print_string
 	.global print_char
+	.global print_newline
+
 print_string:
-    pusha       # store all register onto the stack
+    pusha       # store all register into the stack
 
 print_loop:
     mov al, byte ptr[bx]        # mov char value at address BX into al
@@ -12,15 +14,19 @@ print_loop:
     cmp al, 0
     je print_end                # If equal to 0 (null terminator), whe jump to the end
     cmp al, 10
-    je print_newline
+    je call_newline
     int 0x10                    # interrupt with ah=0x0E --> Teletype mode
+	jmp print_increment
+
+call_newline:
+	call print_newline
 
 print_increment:
     add bx, 1                   # move pointer from the address in BX
     jmp print_loop              # We loop until al = 0 (null terminator)
 
 print_newline:
-    
+   	pusha 
     mov al, 0xa # newline
     mov ah, 0x0e
     int 0x10
@@ -28,8 +34,8 @@ print_newline:
     mov al, 0xd # Carriage return
     mov ah, 0x0e
     int 0x10
-    
-    jmp print_increment
+   	popa 
+	ret
 print_end:
     popa                        # restore registers from the stack before returning
     ret
