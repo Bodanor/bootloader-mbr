@@ -255,7 +255,17 @@ DAP_upper_16:
 	call compute_root_sectors
 	call compute_root_location
 	call showFilesRoot
-	jmp .	
+	cmp ax, 0
+	je KernelFound
+	
+	mov bx, offset flat:KernelNotFoundMsg
+	call print_string
+	jmp BootError
+
+KernelFound:
+	mov bx, offset flat:KernelFoundMsg
+	call print_string
+	jmp .
 compute_root_sectors:
 	mov ax, 32
 	xor dx, dx
@@ -285,7 +295,7 @@ showFilesRoot:
 .loadSector:
 
 	mov word ptr [DAP_lower_32], si
-	mov word ptr[DAP_dest_buffer], 0x7f00
+	mov word ptr[DAP_dest_buffer], 0x8000
 	mov cx, 1
 	mov word ptr[DAP_nb_sectors], cx
 
@@ -295,15 +305,74 @@ showFilesRoot:
 	int 0x13
 	jc BootError
 	
+	/* SI : Contains the LBA of the first sector
+	 * DX : Current index in the current loaded sector
+	 * DI : Current index in target file name
+	 * CX : Current index in current filename
+	 */
+
 	push si
 	xor di, di
 	xor dx, dx
-	mov si, 0x7f00
+	xor cx, cx
+	mov si, 0x8000
 
 .findKernel:
-	/* Here I should probably load the current file by deleting any blanks
-	 * and add a dot, so that comparing becomes more easier
-	*/
+	cmp cx, 11 # if at the end of filename max lenght
+	je compareKernelFile
+	mov bl, byte ptr[si]
+	cmp bl, 0x20
+	je .skipBlank
+	cmp cx, 8
+	je .addDot
+	mov byte ptr[di + CurrentTargetFileName], bl
+	jmp .incLoop
+
+.addDot:
+	mov byte ptr[di + CurrentTargetFileName], 0x2e
+	inc di
+	mov byte ptr[di + CurrentTargetFileName], bl
+	jmp .incLoop
+.skipBlank:
+	dec di
+.incLoop:
+	inc si
+	inc dx
+	inc di
+	inc cx
+	jmp .findKernel
+
+compareKernelFile:
+	push si
+	xor cx, cx
+	mov di, offset flat:CurrentTargetFileName
+	mov si, offset flat:TargetKernelFileName
+	xor ax, ax
+	xor cx, cx
+
+.loop:
+	DEBUG
+	cmp cx, 10
+	je .compareKernelFileEnd
+	mov bl, byte ptr[di]
+	cmp bl, byte ptr[si]
+	jne .fileNotMatch
+	inc di
+	inc si
+	inc cx
+	jmp .loop
+
+.fileNotMatch:
+	mov ax, 1
+	pop si
+	jmp nxt_file_entry
+.compareKernelFileEnd:
+	pop si
+	DEBUG
+	jmp NoMoreFiles
+
+
+
 nxt_file_entry:
 	cmp dx, 512
 	je incRootEntry
@@ -326,6 +395,11 @@ NoMoreFiles:
 NextSectorMsg:
 	.asciz "Next sector !\n"
 
+KernelFoundMsg:
+	.asciz "KERNEL.BIN file found !Loading the Kernel\n"
+KernelNotFoundMsg:
+	.asciz "KERNEL.BIN not found ! Abording BOOT\n"
+	
 TargetKernelFileName:
 	.ascii "KERNEL.BIN"
 CurrentTargetFileName:
