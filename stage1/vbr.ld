@@ -1,6 +1,6 @@
 SECTIONS
 {
-    .stage1 0x7c00 :
+    .stage1 0x7c00 : AT(0x0)
     {
 		*(.stage1)
 		*(.common_rountines)
@@ -11,7 +11,7 @@ SECTIONS
 		. = 0x3FE;
 		SHORT(0xaa55)
 	}
-	.stage2 0x9000 :AT(0x1200)
+	.stage2 0x9000 :AT(0x400)
 	{
 		*(.stage2)
 	}
