@@ -78,7 +78,7 @@ _init:
 	jne .AfterA20Enabled
 	
 
-BootError:
+BootErrorA20:
 	mov bx, offset flat:A20FatalErrorMsg
 	call print_string
 	hlt
@@ -100,7 +100,7 @@ BootError:
 	mov dl, byte ptr[bootDrive]
 	mov si, offset flat:DAP
 	int 0x13
-	jc BootError
+	jc BootErrorA20
 	jmp 0x7e00
 
 
@@ -258,9 +258,7 @@ DAP_upper_16:
 	cmp ax, 0
 	je KernelFound
 	
-	mov bx, offset flat:KernelNotFoundMsg
-	call print_string
-	jmp BootError
+	jmp BootKernelNotFound
 
 KernelFound:
 	mov bx, offset flat:KernelFoundMsg
@@ -293,7 +291,7 @@ showFilesRoot:
 	mov si, word ptr root_start_pos
 	xor ax, ax
 .loadSector:
-
+	push si
 	mov word ptr [DAP_lower_32], si
 	mov word ptr[DAP_dest_buffer], 0x8000
 	mov cx, 1
@@ -303,7 +301,7 @@ showFilesRoot:
 	mov dl, byte ptr[bootDrive]
 	mov si, offset flat:DAP
 	int 0x13
-	jc BootError
+	jc BootDiskErrorReadMsg
 	
 	/* SI : Contains the LBA of the first sector
 	 * DX : Current index in the current loaded sector
@@ -311,7 +309,6 @@ showFilesRoot:
 	 * CX : Current index in current filename
 	 */
 
-	push si
 	xor di, di
 	xor dx, dx
 	xor cx, cx
@@ -337,7 +334,6 @@ showFilesRoot:
 	dec di
 .incLoop:
 	inc si
-	inc dx
 	inc di
 	inc cx
 	jmp .findKernel
@@ -347,11 +343,9 @@ compareKernelFile:
 	xor cx, cx
 	mov di, offset flat:CurrentTargetFileName
 	mov si, offset flat:TargetKernelFileName
-	xor ax, ax
 	xor cx, cx
 
 .loop:
-	DEBUG
 	cmp cx, 10
 	je .compareKernelFileEnd
 	mov bl, byte ptr[di]
@@ -363,35 +357,51 @@ compareKernelFile:
 	jmp .loop
 
 .fileNotMatch:
-	mov ax, 1
 	pop si
 	jmp nxt_file_entry
 .compareKernelFileEnd:
+	mov ax, 1
 	pop si
-	DEBUG
-	jmp NoMoreFiles
-
-
+	jmp .KernelFound
 
 nxt_file_entry:
+	add dx, 0x20
 	cmp dx, 512
 	je incRootEntry
 	xor di, di
-	call print_newline
+	xor cx, cx
 	add si, 0x15
 	jmp .findKernel
 
 incRootEntry:
-	inc ax
-	pop si
 	cmp ax, word ptr root_sectors
 	je NoMoreFiles
-	add si, 512
+	pop si
+	inc si
+	inc ax
 	jmp .loadSector
 
 NoMoreFiles:
+	DEBUG
+	mov ax, 1
 	pop si
 	ret
+
+.KernelFound:
+	mov ax, 0
+	pop si
+	ret
+
+BootDiskErrorReadMsg:
+	mov bx, offset flat:BootErrorMsg
+	call print_string
+
+BootKernelNotFound:
+	mov bx, offset flat:KernelNotFoundMsg
+	call print_string
+ErrorBootStrap:
+	hlt
+	jmp .
 NextSectorMsg:
 	.asciz "Next sector !\n"
 
@@ -399,11 +409,12 @@ KernelFoundMsg:
 	.asciz "KERNEL.BIN file found !Loading the Kernel\n"
 KernelNotFoundMsg:
 	.asciz "KERNEL.BIN not found ! Abording BOOT\n"
-	
+BootErrorMsg:
+	.asciz "Could not load sector !\n"
 TargetKernelFileName:
 	.ascii "KERNEL.BIN"
 CurrentTargetFileName:
-	.ascii "           "
+	.ascii "            "
 root_sectors:
 	.word 0
 root_start_pos:
