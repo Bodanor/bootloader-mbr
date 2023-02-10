@@ -1,0 +1,4 @@
+	.intel_syntax noprefix
+	.code16
+	.section ".stage2", "ax"
+

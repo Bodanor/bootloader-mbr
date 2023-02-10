@@ -249,7 +249,7 @@ DAP_upper_16:
 
 .section .stage1_nxt, "ax"
 
-.stage1_next:
+stage1_next:
 	mov bx, offset flat:NextSectorMsg
 	call print_string
 	call compute_root_sectors
@@ -263,7 +263,24 @@ DAP_upper_16:
 KernelFound:
 	mov bx, offset flat:KernelFoundMsg
 	call print_string
-	jmp .
+	
+	mov bx, offset flat:stage2MsgLoading
+	call print_string
+
+	mov ebx, dword ptr iHiddenSect
+	inc ebx
+	mov dword ptr[DAP_lower_32], ebx
+	inc word ptr[DAP_lower_32]
+	mov word ptr[DAP_dest_buffer], 0x9000
+	mov word ptr[DAP_nb_sectors], 0x1
+
+	mov ah, 0x42
+	mov dl, byte ptr[bootDrive]
+	mov si, offset flat:DAP
+	int 0x13
+	jc BootDiskErrorReadMsg
+	jmp 0x9000
+
 compute_root_sectors:
 	mov ax, 32
 	xor dx, dx
@@ -415,6 +432,8 @@ TargetKernelFileName:
 	.ascii "KERNEL.BIN"
 CurrentTargetFileName:
 	.ascii "            "
+stage2MsgLoading:
+	.asciz "Loading Stage 2...\n"
 root_sectors:
 	.word 0
 root_start_pos:
