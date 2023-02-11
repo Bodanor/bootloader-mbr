@@ -423,7 +423,7 @@ NextSectorMsg:
 	.asciz "Next sector !\n"
 
 KernelFoundMsg:
-	.asciz "KERNEL.BIN file found !\nLoading the Kernel\n"
+	.asciz "KERNEL.BIN file found !\n"
 KernelNotFoundMsg:
 	.asciz "KERNEL.BIN not found !\nAbording BOOT\n"
 BootErrorMsg:
