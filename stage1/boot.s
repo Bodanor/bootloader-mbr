@@ -8,6 +8,26 @@
 	xchg bx, bx
 .endm
 
+.global iOEM
+.global iSectSize
+.global iClustSize
+.global iResSect
+.global iFatCnt
+.global iRootSize
+.global iTotalSect
+.global iMedia
+.global iFatSize
+.global iTrackSect
+.global iHeadCnt
+.global iHiddenSect
+.global iSect32
+.global iBootDrive
+.global iReserved
+.global iBootSign
+.global iVolID
+.global acVolumeLabel
+.global acFSType
+
 _start:
 	
 	jmp _start_16
@@ -223,8 +243,17 @@ A20DisabledMsg:
 	.asciz "A20 Gate disabled\n"
 A20FatalErrorMsg:
 	.asciz "Could not enable A20 Gate\nAbording BOOT !"
+.global bootDrive
 bootDrive:
 	.byte 0
+
+.global DAP
+.global DAP_packet_size
+.global DAP_reserved
+.global DAP_nb_sectors
+.global DAP_dest_buffer
+.global DAP_lower_32
+.global DAP_upper_16
 
 DAP:
 
@@ -332,6 +361,11 @@ showFilesRoot:
 	mov si, 0x8000
 
 .findKernel:
+	push si
+	add si, 0x1a
+	mov word ptr[KernelOffsetStartFile], si
+	pop si
+.loopKernel:
 	cmp cx, 11 # if at the end of filename max lenght
 	je compareKernelFile
 	mov bl, byte ptr[si]
@@ -353,7 +387,7 @@ showFilesRoot:
 	inc si
 	inc di
 	inc cx
-	jmp .findKernel
+	jmp .loopKernel
 
 compareKernelFile:
 	push si
@@ -409,6 +443,7 @@ NoMoreFiles:
 	pop si
 	ret
 
+.global BootDiskErrorReadMsg
 BootDiskErrorReadMsg:
 	mov bx, offset flat:BootErrorMsg
 	call print_string
@@ -434,7 +469,12 @@ CurrentTargetFileName:
 	.ascii "            "
 stage2MsgLoading:
 	.asciz "Loading Stage 2...\n"
+.global root_sectors
+.global root_start_pos
 root_sectors:
 	.word 0
 root_start_pos:
+	.word 0
+.global KernelOffsetStartFile
+KernelOffsetStartFile:
 	.word 0
