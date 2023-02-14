@@ -6,17 +6,18 @@
 	xchg bx, bx
 .endm
 
-/* Loading the FAT to read the KERNEL data in memory */
-
+/* Loading the FAT to read the KERNEL data in memory 
+ * FAT Table will be loaded at 0xe00:0x0000
+ * Kernel will be loaded at 0x0fff:0x0010 --> 0x10000
+ */
 loadFat:
 	mov ax, 0xe00
 	mov es, ax
 
-computeFatOffset:
+computeBeginningFatOffset:
 	mov ax, word ptr iResSect
 	add ax, word ptr iHiddenSect
 	adc ax, word ptr iHiddenSect+2
-	DEBUG
 
 loadFatInMem:
 	mov word ptr[DAP_lower_32], ax
@@ -32,50 +33,62 @@ loadFatInMem:
 	jc BootDiskErrorReadMsg
 
 loadKernel:
+	/* Init loading kernel */
 	mov ax, 0xe01
 	mov es, ax
-	mov si, word ptr[KernelOffsetStartFile]
-	mov cx, word ptr[si]
+	mov cl, byte ptr[KernelClusterStart]
 	xor bx, bx
 	mov bx, 0x10
-
-loadkernelNextSector:
+	
+loadkernelCluster:
+	/* Compute exact sector number to read data based on cluster */
+	push cx
 	mov ax, cx
+	sub ax, 2
+	xor cx, cx
+	mov cl, byte ptr iClustSize
+	mul cx
+
 	add ax, root_sectors
 	add ax, root_start_pos
-	sub ax, 2
-loadCurrentKernelSector:
+	
 	mov word ptr[DAP_lower_32], ax
 	mov word ptr[DAP_dest_buffer], bx
-	mov word ptr[DAP_dest_buffer + 2], 0xffff
-	mov word ptr[DAP_nb_sectors], 0x1
+	mov word ptr[DAP_dest_buffer + 2], 0x0fff
+	xor cx, cx
+	mov cl, byte ptr[iClustSize]
+	mov word ptr[DAP_nb_sectors], cx
 	mov ah, 0x42
 	mov dl, byte ptr[bootDrive]
 	mov si, offset flat:DAP
 	int 0x13
 	jc BootDiskErrorReadMsg
+	xor ax, ax
+	mov al, byte ptr [iClustSize]
+	mov cx, word ptr[iSectSize]
+	mul cx
+	add bx, ax
 	
-	add bx, iSectSize
-
+read_next_cluster_in_FAT:
+	pop si
+	push bx
 	push ds
-	mov dx, 0xe00
-	mov ds, dx
-
-	mov si, cx
+	mov ax, 0xe00
+	mov ds, ax
+	mov bx, 0x0000
+	shl si # 2 bytes in address
+	mov cx, word ptr[bx + si]
+	pop ds
+	pop bx
 	
-	DEBUG
-	mov dx, ds:[si]
-	test cx, 1
-	jnz read_next_cluster_odd
-	and dx, 0x0ffff
-	jmp read_next_cluster_done
-read_next_cluster_odd:
-	shr dx, 4
+	cmp cx, 0xffff
+	je read_next_cluster_done
+
+	jmp loadkernelCluster
 
 read_next_cluster_done:
-	pop ds
-	mov cx, dx
-	cmp cx, 0xff8
-	jl loadkernelNextSector
-DEBUG
-jmp .
+	mov bx, offset flat:KernelLoadSuccessMsg
+	call print_string
+	jmp .
+KernelLoadSuccessMsg:
+	.asciz "Kernel loaded at offset 0x10000\n"
