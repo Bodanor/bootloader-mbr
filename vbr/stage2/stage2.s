@@ -23,7 +23,6 @@ KernelFounded:
 	mov bx, offset flat:KernelFoundMsg
 	call print_string
 	mov bx, offset flat:stage2MsgLoading
-	DEBUG
 	call print_string
 	
 	mov ebx, dword ptr iHiddenSect
@@ -316,8 +315,32 @@ read_next_cluster_in_FAT:
 
 read_next_cluster_done:
 	mov bx, offset flat:KernelLoadSuccessMsg
-	DEBUG
 	call print_string
-	jmp .
+
+switch_to_pm:
+	cli
+	lgdt gdt_descriptor
+	mov eax, cr0
+	or eax, 0x1
+	mov cr0, eax
+	ljmp CODE_SEG:init_pm
+
+	.code32
+init_pm:
+	
+	mov ax, offset DATA_SEG
+	DEBUG
+	mov ds, ax
+	mov ss, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+
+	mov ebp, 0x90000
+	mov esp, ebp
+	
+	call 0x10000
 KernelLoadSuccessMsg:
 	.asciz "Kernel loaded at offset 0x10000\n"
+ProtectedModeMsg:
+	.asciz "Switching to 32-bit Protected mode...\n"
