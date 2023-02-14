@@ -362,9 +362,13 @@ showFilesRoot:
 
 .findKernel:
 	push si
+	push bx
 	add si, 0x1a
-	mov word ptr[KernelOffsetStartFile], si
+	mov bl, byte ptr[si]
+	mov byte ptr[KernelClusterStart], bl
+	pop bx
 	pop si
+	
 .loopKernel:
 	cmp cx, 11 # if at the end of filename max lenght
 	je compareKernelFile
@@ -475,6 +479,6 @@ root_sectors:
 	.word 0
 root_start_pos:
 	.word 0
-.global KernelOffsetStartFile
-KernelOffsetStartFile:
-	.word 0
+.global KernelClusterStart
+KernelClusterStart:
+	.byte 0
