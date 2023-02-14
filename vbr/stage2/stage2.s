@@ -22,10 +22,10 @@ stage2_begin:
 KernelFounded:
 	mov bx, offset flat:KernelFoundMsg
 	call print_string
-	
 	mov bx, offset flat:stage2MsgLoading
+	DEBUG
 	call print_string
-
+	
 	mov ebx, dword ptr iHiddenSect
 	inc ebx
 	mov dword ptr[DAP_lower_32], ebx
@@ -167,10 +167,10 @@ compareKernelFile:
 
 /* If we are here then a file called KERNEL.BIN has been found, we return 0 */
 KernelFoundInRoot:
-	DEBUG
 	mov ax, 0
 	pop si
 	pop si
+
 	ret
 
 nxt_file_entry:
@@ -232,15 +232,16 @@ root_start_pos:
 KernelClusterStart:
 	.byte 0
 
-
 /* Loading the FAT to read the KERNEL data in memory 
  * FAT Table will be loaded at 0xe00:0x0000
  * Kernel will be loaded at 0x0fff:0x0010 --> 0x10000
  */
+
+.section ".stage2_next", "ax"
 loadFat:
 	mov ax, 0xe00
 	mov es, ax
-
+	
 computeBeginningFatOffset:
 	mov ax, word ptr iResSect
 	add ax, word ptr iHiddenSect
@@ -296,7 +297,6 @@ loadkernelCluster:
 	mov cx, word ptr[iSectSize]
 	mul cx
 	add bx, ax
-	
 read_next_cluster_in_FAT:
 	pop si
 	push bx
@@ -316,6 +316,7 @@ read_next_cluster_in_FAT:
 
 read_next_cluster_done:
 	mov bx, offset flat:KernelLoadSuccessMsg
+	DEBUG
 	call print_string
 	jmp .
 KernelLoadSuccessMsg:

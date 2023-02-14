@@ -2,7 +2,7 @@ I386-AS=i386-elf-as
 I386-LD=i386-elf-ld
 I386-LDFLAGS=--oformat binary
 
-SUBDIRS := mbr stage1
+SUBDIRS := mbr vbr
 
 BUILD_DIR := build
 MAKE_DIR := $(pwd)
@@ -23,8 +23,8 @@ image: $(SUBDIRS)
 	dd if=mbr/mbr of=$(BUILD_DIR)/hdd.img bs=446 count=1 conv=notrunc
 	sudo losetup -o 1048576 /dev/loop0 $(BUILD_DIR)/hdd.img
 	sudo mkfs.fat -F16 -v /dev/loop0 -h 0x800
-	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 count=3 conv=notrunc
-	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 skip=62 seek=62 conv=notrunc
+	sudo dd if=vbr/vbr-bootloader of=/dev/loop0 bs=1 count=3 conv=notrunc
+	sudo dd if=vbr/vbr-bootloader of=/dev/loop0 bs=1 skip=62 seek=62 conv=notrunc
 	sudo mount /dev/loop0 /mnt
 	sudo touch /mnt/KERNEL.BIN
 	sudo dd if=/dev/random of=/mnt/KERNEL.BIN bs=1 count=3000
@@ -35,6 +35,6 @@ image: $(SUBDIRS)
 
 clean:
 	@$(MAKE) -C mbr clean
-	@$(MAKE) -C stage1 clean
+	@$(MAKE) -C vbr clean
 	rm -rf $(BUILD_DIR)/* 
 
