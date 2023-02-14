@@ -316,7 +316,8 @@ read_next_cluster_in_FAT:
 read_next_cluster_done:
 	mov bx, offset flat:KernelLoadSuccessMsg
 	call print_string
-
+	mov bx, offset flat: ProtectedModeMsg
+	call print_string
 switch_to_pm:
 	cli
 	lgdt gdt_descriptor
@@ -339,8 +340,9 @@ init_pm:
 	mov ebp, 0x90000
 	mov esp, ebp
 	
-	call 0x10000
+	 jmp .
+	call 0x10000 		/* Give control to the kernel, We will never return from here */
 KernelLoadSuccessMsg:
 	.asciz "Kernel loaded at offset 0x10000\n"
 ProtectedModeMsg:
-	.asciz "Switching to 32-bit Protected mode...\n"
+	.asciz "Switching to 32-bit Protected mode and jumping to the Kernel ...\n"
