@@ -27,7 +27,7 @@ image: $(SUBDIRS)
 	sudo dd if=stage1/vbr-bootloader of=/dev/loop0 bs=1 skip=62 seek=62 conv=notrunc
 	sudo mount /dev/loop0 /mnt
 	sudo touch /mnt/KERNEL.BIN
-	echo "123"  >> /mnt/KERNEL.BIN
+	sudo dd if=/dev/random of=/mnt/KERNEL.BIN bs=1 count=3000
 	sudo umount /mnt
 	sudo losetup -d /dev/loop0	
 
