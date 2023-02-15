@@ -318,6 +318,10 @@ read_next_cluster_done:
 	call print_string
 	mov bx, offset flat: ProtectedModeMsg
 	call print_string
+
+	mov ah, 0
+	mov al, 0x12
+	int 0x10
 switch_to_pm:
 	cli
 	lgdt gdt_descriptor
