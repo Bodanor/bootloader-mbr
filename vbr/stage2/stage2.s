@@ -340,7 +340,6 @@ init_pm:
 	mov ebp, 0x90000
 	mov esp, ebp
 	
-	 jmp .
 	call 0x10000 		/* Give control to the kernel, We will never return from here */
 KernelLoadSuccessMsg:
 	.asciz "Kernel loaded at offset 0x10000\n"
