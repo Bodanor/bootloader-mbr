@@ -330,7 +330,6 @@ switch_to_pm:
 init_pm:
 	
 	mov ax, offset DATA_SEG
-	DEBUG
 	mov ds, ax
 	mov ss, ax
 	mov es, ax
