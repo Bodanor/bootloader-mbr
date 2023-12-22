@@ -1,6 +1,6 @@
-I386-AS=i386-elf-as
-I386-LD=i386-elf-ld
-I386-LDFLAGS=--oformat binary
+I386-AS=as
+I386-LD=ld
+I386-LDFLAGS=--oformat binary -m elf_i386
 
 SUBDIRS := mbr vbr
 

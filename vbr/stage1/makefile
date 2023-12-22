@@ -6,7 +6,7 @@ AS_OBJ := $(AS_SRC:.s=.o)
 all: $(AS_OBJ)
 
 %.o: %.s
-	$(I386-AS) -o $@ $<
+	$(I386-AS) --32 -o $@ $<
 
 clean:
 	rm -rf *.o

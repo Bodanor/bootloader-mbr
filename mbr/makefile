@@ -11,7 +11,7 @@ mbr: $(AS_OBJ) ../16-routines/print_16.o
 .PHONY: all clean
 
 %.o:%.s
-	$(I386-AS) -o $@ $<
+	$(I386-AS) --32 -o $@ $<
 
 clean:
 	make -C ../16-routines clean
